@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
+    <link href="{{ url_for('static', filename='squelette.css') }}" rel="stylesheet" type="text/css" />
+    <link href="{{ url_for('static', filename='popup.css') }}" rel="stylesheet" type="text/css" />
+    <link href="{{ url_for('static', filename='popupcreatechannel.css') }}" rel="stylesheet" type="text/css" />
+    <script src="{{ url_for('static', filename='squelette.js') }}"></script>
+
+</head>
+
+<body>
+
+
+    <script type="text/javascript">
+        /*function div_show() {
+          document.getElementById('abc').style.display = "block";
+        }*/
+        //localStorage.removeItem('displayName')
+
+        var messages;
+
+        function PopUp(hideOrshow) {
+            if (hideOrshow == 'hide') {
+                var x;
+                x = document.querySelector('#displayName').value
+                if (x == "") {
+                    alert("Enter a Valid Username");
+                    return false;
+                } else {
+                    localStorage.setItem('displayName', x);
+                    document.getElementById('ac-wrapper').style.display = "None";
+                    return false;
+                }
+
+            } else document.getElementById('ac-wrapper').removeAttribute('style');
+        }
+
+        // ***** create channel begin
+        function createChannel(hideOrshow) {
+            if (hideOrshow == 'hide') {
+                var x;
+                x = document.querySelector('#channelname').value
+                if (x == "") {
+                    alert("Enter a Valid Channel name");
+                    return false;
+                } else {
+
+                    document.getElementById('popupcreateChannel').style.display = "None";
+                }
+
+            } else document.getElementById('popupcreateChannel').removeAttribute('style');
+            return false;
+        }
+        // create channel ends ******
+
+        document.addEventListener('DOMContentLoaded', () => {
+
+
+
+
+            window.onload = function() {
+                if (!localStorage.getItem['currentChannel']) {
+                    socket.emit('submit channel search', {
+                        'channelname': localStorage.getItem('currentChannel'),
+                        'currentchannel': localStorage.getItem('currentChannel')
+                    });
+                } else {
+                    document.querySelector('#chatcontainer').style.display = "None";
+                }
+
+                if (!localStorage.getItem('displayName')) {
+                    setTimeout(function() {
+                        PopUp('show');
+                    }, 500);
+                }
+            }
+            document.querySelector('#createshannel').onsubmit = () => {
+
+                // Create new item for list
+                createChannel('show');
+                return false;
+            };
+
+
+            var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port);
+            socket.on('connect', () => {
+
+                document.querySelector('#btn-chat').onclick = () => {
+
+                    var time = (new Date()).toString();
+                    var username = localStorage.getItem('displayName');
+                    var text = document.querySelector('#btn-input').value;
+                    document.querySelector('#btn-input').value = "";
+                    const li = document.createElement('li');
+
+
+                    const span1 = document.createElement('span');
+                    const img = document.createElement('img');
+                    li.setAttribute("class", "left clearfix");
+                    li.addEventListener('click', function(){ li.style.display='none';}, false);
+                    //http%3A%2F%2Fplacehold.it%2F50%2F55C1E7%2Ffff%26text%3DU
+                    //http://placehold.it/50/55C1E7/fff&text=U
+                    //span class="chat-img pull-left"
+                    img.src = 'http://placehold.it/50/FA6F57/fff&text=ME';
+                    img.setAttribute("class", "img-circle");
+                    span1.setAttribute("class", "chat-img pull-right");
+                    span1.append(img);
+                    const div1 = document.createElement('div');
+                    div1.setAttribute("class", "chat-body clearfix");
+                    const div2 = document.createElement('div');
+                    div2.setAttribute("class", "header");
+                    const strong = document.createElement('strong');
+                    strong.setAttribute("class", "primary-font");
+                    strong.innerHTML = username;
+                    // strong.value = message.Username
+                    const small = document.createElement('small');
+                    small.setAttribute("class", "pull-right text-muted");
+                    const span2 = document.createElement('span');
+                    span2.setAttribute("class", "glyphicon glyphicon-time");
+                    small.innerHTML = time;
+                    small.appendChild(span2);
+                    div2.appendChild(strong);
+                    div2.appendChild(small);
+                    const p = document.createElement('p');
+                    p.innerHTML = text; // text message
+                    div1.appendChild(div2);
+                    div1.appendChild(p);
+                    li.appendChild(span1);
+                    li.appendChild(div1);
+                    document.querySelector('#chat').append(li);
+                    var message = {
+                        "text": text,
+                        "sender": username,
+                        "channel": localStorage.getItem('currentChannel'),
+                        "time": time
+                    };
+                    console.log(message);
+                    socket.emit('send message to room', {
+                        'message': message
+                    });
+
+
+
+
+                    /*
+
+                    */
+                };
+
+                document.querySelector('#channelsearch').onsubmit = () => {
+                    var x;
+                    x = document.querySelector('#myInput').value
+                    if (x == "") {
+                        alert("Enter a Valid Channel name");
+                        return false;
+                    } else {
+                        socket.emit('submit channel search', {
+                            'channelname': x,
+                            'currentchannel': localStorage.getItem('currentChannel')
+                        });
+                        localStorage.setItem('currentChannel', x)
+                        return false;
+                    }
+                };
+
+
+                document.querySelector('#submitecreatechannel').onsubmit = () => {
+                    var x;
+                    x = document.querySelector('#channelname').value
+                    if (x == "") {
+                        alert("Enter a Valid Channel name");
+                        return false;
+                    } else {
+                        let channelName = x;
+                        createChannel('hide')
+                        socket.emit('new channel', {
+                            'channelname': channelName
+                        });
+
+                    }
+
+                };
+
+
+
+            });
+            socket.on('channel_created', () => {
+
+                alert('your channel was succesfully created')
+
+            });
+
+            socket.on('new channel error', () => {
+                alert('this channel name already exists')
+            });
+
+
+
+
+            socket.on('search channel name error', () => {
+
+                alert('the channel name you entered doesnt exist ')
+
+            });
+            socket.on('message update', data => {
+                console.log('passes');
+
+
+
+                var message1 = data.message;
+                var message = JSON.parse(message1);
+                if (localStorage.getItem('displayName') != message['sender']) {
+                    const li = document.createElement('li');
+                    const span1 = document.createElement('span');
+                    const img = document.createElement('img');
+                    li.setAttribute("class", "left clearfix");
+                    li.addEventListener('click', function(){ li.style.display='none';}, false);
+                    //http%3A%2F%2Fplacehold.it%2F50%2F55C1E7%2Ffff%26text%3DU
+                    //http://placehold.it/50/55C1E7/fff&text=U
+                    //span class="chat-img pull-left"
+                    img.src = 'http://placehold.it/50/55C1E7/fff&text=U';
+                    img.setAttribute("class", "img-circle");
+                    span1.setAttribute("class", "chat-img pull-left");
+                    span1.append(img);
+                    const div1 = document.createElement('div');
+                    div1.setAttribute("class", "chat-body clearfix");
+                    const div2 = document.createElement('div');
+                    div2.setAttribute("class", "header");
+                    const strong = document.createElement('strong');
+                    strong.setAttribute("class", "primary-font");
+                    strong.innerHTML = message['sender'];
+                    // strong.value = message.Username
+                    const small = document.createElement('small');
+                    small.setAttribute("class", "pull-right text-muted");
+                    const span2 = document.createElement('span');
+                    span2.setAttribute("class", "glyphicon glyphicon-time");
+                    small.innerHTML = message['time'];
+                    small.appendChild(span2);
+                    div2.appendChild(strong);
+                    div2.appendChild(small);
+                    const p = document.createElement('p');
+                    p.innerHTML = message['text']; // text message
+                    div1.appendChild(div2);
+                    div1.appendChild(p);
+                    li.appendChild(span1);
+                    li.appendChild(div1);
+                    document.querySelector('#chat').append(li);
+                }
+            });
+
+            socket.on('channel details', data => {
+
+                var messagess = data.messages;
+                messages = JSON.parse(messagess);
+                var myNode = document.querySelector('#chat');
+                while (myNode.firstChild) {
+                    myNode.removeChild(myNode.firstChild);
+                }
+                document.querySelector('#chat').innerHTML = ''
+                document.querySelector('#spanchannel').innerHTML = localStorage.getItem['currentChannel'];
+                var i = 0;
+                for (i = 0; i < messages.length; i++) {
+
+                    var li = document.createElement("li");
+                    li.innerHTML = messages[0]['sender'];
+
+                    const span1 = document.createElement('span');
+                    const img = document.createElement('img');
+                    li.setAttribute("class", "left clearfix");
+                    li.addEventListener('click', function(){ li.style.display='none';}, false);
+                    //http%3A%2F%2Fplacehold.it%2F50%2F55C1E7%2Ffff%26text%3DU
+                    //http://placehold.it/50/55C1E7/fff&text=U
+                    //span class="chat-img pull-left"
+                    if (messages[i]['sender'] == localStorage.getItem('displayName')) {
+                        img.src = 'http://placehold.it/50/FA6F57/fff&text=ME';
+                    } else {
+                        img.src = 'http://placehold.it/50/55C1E7/fff&text=U';
+                    }
+                    img.setAttribute("class", "img-circle");
+                    if (messages[i]['sender'] == localStorage.getItem('displayName')) {
+                        span1.setAttribute("class", "chat-img pull-right");
+                    } else {
+                        span1.setAttribute("class", "chat-img pull-left");
+                    }
+                    span1.append(img);
+                    const div1 = document.createElement('div');
+                    div1.setAttribute("class", "chat-body clearfix");
+                    const div2 = document.createElement('div');
+                    div2.setAttribute("class", "header");
+                    const strong = document.createElement('strong');
+                    strong.setAttribute("class", "primary-font");
+                    strong.innerHTML = messages[i]['sender'];
+                    // strong.value = message.Username
+                    const small = document.createElement('small');
+                    small.setAttribute("class", "pull-right text-muted");
+                    const span2 = document.createElement('span');
+                    span2.setAttribute("class", "glyphicon glyphicon-time");
+                    small.innerHTML = messages[i]['time'];
+                    small.appendChild(span2);
+                    div2.appendChild(strong);
+                    div2.appendChild(small);
+                    const p = document.createElement('p');
+                    p.innerHTML = messages[i]['text']; // text message
+                    div1.appendChild(div2);
+                    div1.appendChild(p);
+                    li.appendChild(span1);
+                    li.appendChild(div1);
+
+                    document.querySelector('#chat').appendChild(li);
+
+                }
+
+
+                //  messages = data.messages;
+                console.log(messages);
+                console.log(messages.length);
+
+            });
+
+        });
+    </script>
+
+
+    <div class="sidenav" id="task">
+
+        <a>
+            <form id="channels">
+                <input id="submit" type="submit" name="Create Channel" value="channels">
+            </form>
+        </a>
+        <a>
+            <form id="createshannel">
+                <input id="submit" type="submit" name="Create Channel" value="New Channel">
+            </form>
+        </a>
+        <a>
+            <form id="message">
+                <input id="submit" type="submit" name="Create Channel" value="message">
+            </form>
+        </a>
+    </div>
+
+
+
+    {% include 'popup.html' %} {% include 'popupcreateChannel.html' %}
+
+    <div class="main">
+        {% include 'navbar.html' %} {% include 'chatbox.html' %}
+
+
+</body>
+
+</html>
